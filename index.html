@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parenting Guidance Chatbot</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-box" id="chat-box"></div>
+    <div class="input-box">
+      <input type="text" id="user-input" placeholder="Type a message..." autocomplete="off">
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script src="chatbot.js"></script>
+</body>
+</html>
+
+
+2. CSS (styles.css)
+
+
+css
+Copy
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f9;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.chat-container {
+  width: 400px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  height: 500px;
+}
+
+.chat-box {
+  flex-grow: 1;
+  padding: 10px;
+  overflow-y: auto;
+  border-bottom: 1px solid #ddd;
+  margin: 10px;
+}
+
+.input-box {
+  display: flex;
+  padding: 10px;
+}
+
+.input-box input {
+  width: 80%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.input-box button {
+  padding: 10px;
+  background-color: #007BFF;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+.input-box button:hover {
+  background-color: #0056b3;
+}
+
+
+3. JavaScript (chatbot.js)
+
+
+javascript
+Copy
+// Function to append message to the chat window
+function appendMessage(sender, message) {
+  const chatBox = document.getElementById("chat-box");
+  const messageDiv = document.createElement("div");
+  messageDiv.classList.add(sender);
+  messageDiv.innerHTML = message;
+  chatBox.appendChild(messageDiv);
+  chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom
+}
+
+// Function to send the message
+function sendMessage() {
+  const userInput = document.getElementById("user-input").value;
+  if (userInput.trim() === "") return;
+
+  appendMessage("user", userInput); // Display user message
+  document.getElementById("user-input").value = ""; // Clear input field
+
+  // Call the backend API to get a response from the parenting guidance API
+  fetch('http://localhost:3000/get-response', {  // Ensure the correct API endpoint
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ message: userInput }) // Send user message
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    return response.json();
+  })
+  .then(data => {
+    console.log('API response:', data); // Log the response for debugging
+    const botMessage = data.reply; // Assuming the API returns a 'reply' key
+    appendMessage("bot", botMessage); // Display bot's response
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    appendMessage("bot", "Sorry, I couldn't understand that. Please try again.");
+  });
+}
+Backend (Node.js)
+4. Install Dependencies
+bash
+Copy
+npm init -y
+npm install express body-parser axios cors
+5. Server Code (server.js)
+javascript
+Copy
+const express = require('express');
+const bodyParser = require('body-parser');
+const axios = require('axios');
+const cors = require('cors');
+
+const app = express();
+const port = 3000;
+
+// Middleware to parse JSON requests
+app.use(bodyParser.json());
+app.use(cors());  // Enable CORS
+
+app.post('/get-response', async (req, res) => {
+  const userMessage = req.body.message.toLowerCase();
+
+  let responseMessage = '';
+
+  // Simulate response from Parenting API based on keywords
+  if (userMessage.includes('tantrum')) {
+    responseMessage = "Tantrums can be tough! Stay calm and offer comfort. Try using phrases like 'I understand you're upset.'";
+  } else if (userMessage.includes('sleep')) {
+    responseMessage = "Make sure to maintain a consistent bedtime routine. A calming ritual before sleep can help.";
+  } else if (userMessage.includes('bullying')) {
+    responseMessage = "Encourage your child to talk about their feelings and report bullying to a trusted adult.";
+  } else {
+    responseMessage = "I'm here to help with parenting! What would you like advice on?";
+  }
+
+  res.json({ reply: responseMessage });
+});
+
+app.listen(port, () => {
+  console.log(`Chatbot API listening at http://localhost:${port}`);
+});
